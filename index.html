@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AbastoIQ: planeación de la cadena de suministro, optimización de compras y prevención de cortos de material.">
+  <title>AbastoIQ · Planeación de Cadena de Suministro</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- ===== Barra lateral de navegación ===== -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 8-10" /><path d="M15 5h5v5" /></svg>
+        </div>
+        <div class="brand-text">
+          <strong>AbastoIQ</strong>
+          <span>Supply Chain Planning</span>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Navegación principal">
+        <button class="nav-item active" data-view="tablero">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+          <span>Tablero</span>
+        </button>
+        <button class="nav-item" data-view="inventario">
+          <svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>
+          <span>Inventario</span>
+        </button>
+        <button class="nav-item" data-view="pronostico">
+          <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+          <span>Pronóstico</span>
+        </button>
+        <button class="nav-item" data-view="compras">
+          <svg viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.6 12.4a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L21 8H6"/></svg>
+          <span>Compras</span>
+          <em class="nav-badge" id="badge-compras">0</em>
+        </button>
+        <button class="nav-item" data-view="proveedores">
+          <svg viewBox="0 0 24 24"><path d="M1 16V6h13v10"/><path d="M14 9h4l4 4v3h-8"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+          <span>Proveedores y ABC</span>
+        </button>
+        <button class="nav-item" data-view="simulador">
+          <svg viewBox="0 0 24 24"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 16h6"/></svg>
+          <span>Simulador</span>
+        </button>
+        <button class="nav-item" data-view="datos">
+          <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></svg>
+          <span>Datos y ajustes</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <strong>Ensambles Electromecánicos del Centro</strong>
+        <span>Planta Querétaro · Empresa ficticia</span>
+      </div>
+    </aside>
+
+    <!-- ===== Contenido principal ===== -->
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 id="view-title">Tablero de control</h1>
+          <p id="view-subtitle" class="muted">Visión general del abastecimiento y riesgo de corto de material</p>
+        </div>
+        <div class="topbar-actions">
+          <span class="chip" id="corte-chip" title="Fecha de corte de los datos">Datos al —</span>
+          <button class="btn btn-ghost" id="btn-avanzar" title="Simula un día de producción: consumo, recepciones y retrasos">
+            <svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg>
+            Simular día de producción
+          </button>
+        </div>
+      </header>
+
+      <!-- Vista: Tablero -->
+      <section class="view active" id="view-tablero" aria-labelledby="view-title">
+        <div class="kpi-grid" id="kpis"></div>
+        <div class="grid grid-2">
+          <article class="card">
+            <div class="card-head">
+              <h2>Estado del inventario</h2>
+              <span class="muted small">Clasificación por riesgo de corto</span>
+            </div>
+            <div class="donut-wrap">
+              <div class="donut-canvas"><canvas id="chart-estado"></canvas></div>
+              <ul class="legend" id="legend-estado"></ul>
+            </div>
+          </article>
+          <article class="card">
+            <div class="card-head">
+              <h2>Próximos agotamientos</h2>
+              <span class="muted small">Fecha estimada en la que el material llega a cero si no se actúa</span>
+            </div>
+            <div id="timeline" class="timeline"></div>
+          </article>
+        </div>
+        <article class="card">
+          <div class="card-head">
+            <h2>Alertas prioritarias</h2>
+            <button class="btn btn-primary btn-sm" data-goto="compras">Ir a compras sugeridas</button>
+          </div>
+          <div class="table-wrap" id="tabla-alertas"></div>
+        </article>
+        <article class="card" id="card-eventos">
+          <div class="card-head">
+            <h2>Bitácora de operación</h2>
+            <span class="muted small">Eventos generados al simular días de producción</span>
+          </div>
+          <div id="eventos"></div>
+        </article>
+      </section>
+
+      <!-- Vista: Inventario -->
+      <section class="view" id="view-inventario">
+        <article class="card">
+          <div class="toolbar">
+            <input type="search" id="f-texto" class="input" placeholder="Buscar SKU o descripción…" aria-label="Buscar material">
+            <select id="f-categoria" class="input" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option></select>
+            <select id="f-estado" class="input" aria-label="Filtrar por estado">
+              <option value="">Todos los estados</option>
+              <option value="critico">Crítico</option>
+              <option value="riesgo">Riesgo de corto</option>
+              <option value="ok">Saludable</option>
+              <option value="exceso">Exceso</option>
+            </select>
+            <span class="muted small" id="inv-contador"></span>
+          </div>
+          <div class="table-wrap tall" id="tabla-inventario"></div>
+          <p class="muted small note">SS = inventario de seguridad · ROP = punto de reorden · EOQ = lote económico de compra · Posición = existencia + en tránsito. Haz clic en una fila para ver su pronóstico.</p>
+        </article>
+      </section>
+
+      <!-- Vista: Pronóstico -->
+      <section class="view" id="view-pronostico">
+        <article class="card">
+          <div class="toolbar">
+            <label for="sel-sku" class="muted small">Material</label>
+            <select id="sel-sku" class="input input-wide"></select>
+            <span id="pron-estado"></span>
+          </div>
+          <div class="stat-grid" id="pron-stats"></div>
+        </article>
+        <article class="card">
+          <div class="card-head">
+            <h2>Demanda histórica y pronóstico</h2>
+            <span class="muted small">Suavizamiento exponencial de Holt con estacionalidad semanal · banda de 95 %</span>
+          </div>
+          <div class="chart-box"><canvas id="chart-demanda"></canvas></div>
+        </article>
+        <article class="card">
+          <div class="card-head">
+            <h2>Proyección de inventario</h2>
+            <span class="muted small">Existencia esperada día a día con el pronóstico y las órdenes en tránsito</span>
+          </div>
+          <div class="chart-box"><canvas id="chart-proyeccion"></canvas></div>
+          <div id="pron-insight" class="insight"></div>
+        </article>
+      </section>
+
+      <!-- Vista: Compras -->
+      <section class="view" id="view-compras">
+        <div class="kpi-grid kpi-3" id="compras-kpis"></div>
+        <article class="card">
+          <div class="card-head">
+            <h2>Órdenes de compra sugeridas</h2>
+            <div class="btn-row">
+              <button class="btn btn-ghost btn-sm" id="btn-export-sug">Exportar CSV</button>
+              <button class="btn btn-primary btn-sm" id="btn-generar-oc">Generar órdenes seleccionadas</button>
+            </div>
+          </div>
+          <p class="muted small">Cantidad = máx(EOQ, ROP + EOQ − posición), redondeada al mínimo de compra (MOQ) del proveedor. Puedes ajustar la cantidad antes de generar la orden.</p>
+          <div id="sugerencias"></div>
+        </article>
+        <article class="card">
+          <div class="card-head">
+            <h2>Órdenes abiertas (en tránsito)</h2>
+            <span class="muted small" id="oc-total"></span>
+          </div>
+          <div class="table-wrap" id="tabla-ordenes"></div>
+        </article>
+      </section>
+
+      <!-- Vista: Proveedores y ABC -->
+      <section class="view" id="view-proveedores">
+        <article class="card">
+          <div class="card-head">
+            <h2>Evaluación de proveedores</h2>
+            <span class="muted small">Puntaje = 50 % entregas a tiempo + 30 % calidad + 20 % rapidez</span>
+          </div>
+          <div class="table-wrap" id="tabla-proveedores"></div>
+        </article>
+        <div class="grid grid-2-1">
+          <article class="card">
+            <div class="card-head">
+              <h2>Análisis ABC (Pareto)</h2>
+              <span class="muted small">Valor anual de consumo por material</span>
+            </div>
+            <div class="chart-box"><canvas id="chart-pareto"></canvas></div>
+          </article>
+          <article class="card">
+            <div class="card-head"><h2>Resumen ABC</h2></div>
+            <div id="abc-resumen"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Vista: Simulador -->
+      <section class="view" id="view-simulador">
+        <div class="grid grid-1-2">
+          <article class="card">
+            <div class="card-head"><h2>Escenario “¿qué pasaría si…?”</h2></div>
+            <div class="form">
+              <label class="field">
+                <span>Nivel de servicio objetivo <output id="o-ns"></output></span>
+                <input type="range" id="s-ns" min="80" max="99.5" step="0.5">
+              </label>
+              <label class="field">
+                <span>Variación de la demanda <output id="o-dem"></output></span>
+                <input type="range" id="s-dem" min="-30" max="60" step="5" value="0">
+              </label>
+              <label class="field">
+                <span>Retraso de proveedor <output id="o-ret"></output></span>
+                <input type="range" id="s-ret" min="0" max="20" step="1" value="0">
+              </label>
+              <label class="field">
+                <span>Aplicar retraso a</span>
+                <select id="s-prov" class="input"><option value="todos">Todos los proveedores</option></select>
+              </label>
+              <button class="btn btn-ghost" id="btn-reset-esc">Restablecer escenario</button>
+            </div>
+          </article>
+          <article class="card">
+            <div class="card-head">
+              <h2>Impacto del escenario</h2>
+              <span class="muted small">Comparación contra la situación actual</span>
+            </div>
+            <div id="sim-comparacion"></div>
+          </article>
+        </div>
+        <article class="card">
+          <div class="card-head"><h2>Materiales que cambian de estado</h2></div>
+          <div class="table-wrap" id="sim-cambios"></div>
+        </article>
+      </section>
+
+      <!-- Vista: Datos y ajustes -->
+      <section class="view" id="view-datos">
+        <div class="grid grid-2">
+          <article class="card">
+            <div class="card-head"><h2>Parámetros de planeación</h2></div>
+            <form class="form" id="form-ajustes">
+              <label class="field"><span>Nivel de servicio (%)</span><input class="input" type="number" id="a-ns" min="50" max="99.9" step="0.1" required></label>
+              <label class="field"><span>Costo anual de mantener inventario (% del costo)</span><input class="input" type="number" id="a-cm" min="1" max="80" step="1" required></label>
+              <label class="field"><span>Horizonte de proyección (días)</span><input class="input" type="number" id="a-hz" min="30" max="120" step="1" required></label>
+              <label class="field"><span>Cobertura considerada exceso (días)</span><input class="input" type="number" id="a-ex" min="20" max="365" step="1" required></label>
+              <button class="btn btn-primary" type="submit">Guardar parámetros</button>
+            </form>
+          </article>
+          <article class="card">
+            <div class="card-head"><h2>Importar y exportar</h2></div>
+            <div class="form">
+              <p class="muted small">Actualiza existencias desde un CSV con columnas <code>sku,stock</code> (por ejemplo, exportado del ERP o del conteo cíclico).</p>
+              <label class="file-drop">
+                <input type="file" id="file-csv" accept=".csv,text/csv">
+                <span>Seleccionar archivo CSV de existencias</span>
+              </label>
+              <button class="btn btn-ghost" id="btn-export-inv">Exportar análisis de inventario (CSV)</button>
+              <button class="btn btn-ghost" id="btn-plantilla">Descargar plantilla CSV</button>
+              <hr>
+              <button class="btn btn-danger" id="btn-reset">Restablecer datos de demostración</button>
+            </div>
+          </article>
+        </div>
+        <article class="card">
+          <div class="card-head"><h2>Metodología</h2></div>
+          <div class="method">
+            <div><h3>Pronóstico</h3><p>Se calculan índices estacionales por día de la semana, se desestacionaliza la serie y se aplica suavizamiento exponencial de Holt (α = 0.25, β = 0.05) con tendencia amortiguada. El error se mide con MAPE y la desviación de los residuos.</p></div>
+            <div><h3>Inventario de seguridad</h3><p>SS = z · √(L·σ<sub>d</sub>² + d²·σ<sub>L</sub>²). Combina la variabilidad de la demanda y del tiempo de entrega del proveedor; z se obtiene de la normal inversa del nivel de servicio.</p></div>
+            <div><h3>Punto de reorden y lote</h3><p>ROP = demanda pronosticada durante el tiempo de entrega + SS. EOQ = √(2·D·S / H), con D demanda anual, S costo por pedido y H costo de mantener una unidad un año.</p></div>
+            <div><h3>Riesgo de corto</h3><p>Se proyecta el inventario día a día. Si el material se agota antes de que pueda llegar un pedido nuevo es <b>Crítico</b>; si la posición está por debajo del ROP es <b>Riesgo</b>.</p></div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Módulos JavaScript (patrón de módulo, sin dependencias externas) -->
+  <script src="js/utils.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
